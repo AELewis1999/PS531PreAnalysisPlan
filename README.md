@@ -1,35 +1,129 @@
 # PS531PreAnalysisPlan
-```{r setup, echo=FALSE, results=FALSE, include=FALSE}
-#install.packages("knitr")
-#install.packages("skimr")
+```{r setup, include=FALSE}
+# install.packages("knitr")
+# install.packages("skimr")
 library(knitr)
 library(readr)
 library(tidyverse)
 library(skimr)
-library(tidyverse)
-library(estimatr)
-library(DeclareDesign)
-library(MASS)
-library(optmatch)
-library(RItools)
-library(robustbase)
-library(designmatch)
-library(coin)
-library(sensemakr)
-library(sensitivitymv)
-library(sensitivitymult)
-library(sensitivityfull)
-library(senstrat)
 Fall_2022_Survey_Lewis_November_24_2022_14_45_csv <- read_csv("C:/Users/Alesha/Downloads/Fall 2022 - Survey (Lewis)_November 24, 2022_14.45.csv.zip")
 AELSurveyData <- Fall_2022_Survey_Lewis_November_24_2022_14_45_csv
-#View(AELSurveyData)
+View(AELSurveyData)
 skim(AELSurveyData)
 AELSurveyData<-AELSurveyData[-c(1,2),]
 AELSurveyData<-AELSurveyData[,-c(1,2,3,4,5,6,7,8,9,10,11,12,13)]
 AELSurveyData$ID=1:390
-```
 
-```{r}
+# Q49 = gender
+# Q50 = age
+# Q51 = race
+# Q52 = ethnicity ("are you Hispanic or Latino?")
+# Q46 = citizenship ("are you a US citizen?")
+# Q8 = voting eligibility ("were you eligible to vote in the US federal election in 2020?")
+# Q9 = voting in the last election ("did you vote in the US federal election in 2020?")
+
+
+#race
+AELSurveyData$race <- AELSurveyData$Q51
+AELSurveyData$race[AELSurveyData$race=="NA's"] <- NA
+AELSurveyData$race[AELSurveyData$race == "African American/Black"] <- 1
+AELSurveyData$race[AELSurveyData$race == "Asian"] <- 2
+AELSurveyData$race[AELSurveyData$race == "Native American/Alaska Native"] <- 3
+AELSurveyData$race[AELSurveyData$race == "Caucasian/White"] <- 4
+AELSurveyData$race[AELSurveyData$race == "Multiple/Mixed"] <- 5
+AELSurveyData$race[AELSurveyData$race == "Other (please specify)"] <- 6
+AELSurveyData$race <- as.factor(AELSurveyData$race)
+levels(AELSurveyData$race)
+summary(AELSurveyData$race)
+# How many missing values do we have for race? We'll need to know this for when we stratify later in the code
+sum(is.na(AELSurveyData$race))
+# check distribution of covariate
+table(AELSurveyData$race)
+# determine most common category
+most_common <- names(sort(table(AELSurveyData$race), decreasing = TRUE))[1]
+# impute missing values with most common category
+AELSurveyData$race[is.na(AELSurveyData$race)] <- most_common
+
+
+#age
+Age <- AELSurveyData$Q50
+as.numeric(Age)
+# create a vector
+Age <- c('18', '19', '20', '21', '22')
+# convert to numeric
+Age <- as.numeric(Age)
+# display the vector
+print(Age)
+# display vector's type
+print(class(Age))
+# How many missing values do we have for age? 
+sum(is.na(AELSurveyData$Q50))
+# impute missing values with mean
+mean_covariate <- mean(AELSurveyData$Q50, na.rm = TRUE)
+AELSurveyData$Q50[is.na(AELSurveyData$Q50)] <- mean_covariate
+
+#ethnicity
+AELSurveyData$ethnicity <- AELSurveyData$Q52
+AELSurveyData$ethnicity[AELSurveyData$ethnicity=="NA's"] <- NA
+AELSurveyData$ethnicity[AELSurveyData$ethnicity == "Yes"] <- 1
+AELSurveyData$ethnicity[AELSurveyData$ethnicity == "No"] <- 0
+AELSurveyData$ethnicity <- as.factor(AELSurveyData$ethnicity)
+levels(AELSurveyData$ethnicity)
+summary(AELSurveyData$ethnicity)
+# How many missing values do we have for ethnicity? 
+sum(is.na(AELSurveyData$ethnicity))
+# check distribution of covariate
+table(AELSurveyData$ethnicity)
+# determine most common category
+most_common <- names(sort(table(AELSurveyData$ethnicity), decreasing = TRUE))[1]
+# impute missing values with most common category
+AELSurveyData$ethnicity[is.na(AELSurveyData$ethnicity)] <- most_common
+
+#gender
+AELSurveyData$gender <- AELSurveyData$Q49
+AELSurveyData$gender[AELSurveyData$gender == "Male"] <- 0
+AELSurveyData$gender[AELSurveyData$gender == "Female"] <- 1
+AELSurveyData$gender[AELSurveyData$gender == "Another identification (please specify)"] <- 2
+levels(AELSurveyData$gender)
+summary(AELSurveyData$gender)
+table(AELSurveyData$gender)
+# How many missing values do we have for gender? 
+sum(is.na(AELSurveyData$gender))
+# check distribution of covariate
+table(AELSurveyData$gender)
+# determine most common category
+most_common <- names(sort(table(AELSurveyData$gender), decreasing = TRUE))[1]
+# impute missing values with most common category
+AELSurveyData$gender[is.na(AELSurveyData$gender)] <- most_common
+
+#citizenship
+AELSurveyData$citizenship <- AELSurveyData$Q46
+AELSurveyData$citizenship[AELSurveyData$citizenship=="NA's"] <- NA
+AELSurveyData$citizenship[AELSurveyData$citizenship == "Yes"] <- 1
+AELSurveyData$citizenship[AELSurveyData$citizenship == "No"] <- 0
+AELSurveyData$citizenship <- as.factor(AELSurveyData$citizenship)
+levels(AELSurveyData$citizenship)
+summary(AELSurveyData$citizenship)
+# How many missing values do we have for citizenship? 
+sum(is.na(AELSurveyData$citizenship))
+# check distribution of covariate
+table(AELSurveyData$citizenship)
+# determine most common category
+most_common <- names(sort(table(AELSurveyData$citizenship), decreasing = TRUE))[1]
+# impute missing values with most common category
+AELSurveyData$citizenship[is.na(AELSurveyData$citizenship)] <- most_common
+
+
+#voting eligibility
+which(colnames(AELSurveyData)=="Q8") #tells you which column number
+AELSurveyData$voteeligible <- AELSurveyData$Q8
+AELSurveyData$voteeligible[AELSurveyData$voteeligible=="NA's"] <- NA
+AELSurveyData$voteeligible[AELSurveyData$voteeligible == "Yes"] <- 1
+AELSurveyData$voteeligible[AELSurveyData$voteeligible == "No"] <- 0
+AELSurveyData$voteeligible <- as.factor(AELSurveyData$voteeligible)
+levels(AELSurveyData$voteeligible)
+summary(AELSurveyData$voteeligible)
+
 #voting in last election
 AELSurveyData$lastelection <- AELSurveyData$Q9
 AELSurveyData$lastelection[AELSurveyData$lastelection=="NA's"] <- NA
@@ -43,10 +137,13 @@ summary(AELSurveyData$lastelection)
 sum(is.na(AELSurveyData$lastelection))
 # check distribution of covariate
 table(AELSurveyData$lastelection)
-# determine most common category
-most_common <- names(sort(table(AELSurveyData$lastelection), decreasing = TRUE))[1]
-# impute missing values with most common category
-AELSurveyData$lastelection[is.na(AELSurveyData$lastelection)] <- most_common
+# Remove the missing values
+na.omit(AELSurveyData$lastelection)
+
+# Convert binary outcome variable (voting in the last election) to a numeric variable
+elect_numeric <- as.numeric(AELSurveyData$lastelection)
+# Print the numeric variable
+elect_numeric
 
 #discrimination, yes or no
 AELSurveyData$discrimination <- AELSurveyData$Q32
@@ -56,121 +153,6 @@ AELSurveyData$discrimination[AELSurveyData$discrimination == "No"] <- 0
 AELSurveyData$discrimination <- as.factor(AELSurveyData$discrimination)
 levels(AELSurveyData$discrimination)
 summary(AELSurveyData$discrimination)
-
-#age
-Age <- AELSurveyData$Q50
-as.numeric(Age)
-# create a vector
-Age <- c('18', '19', '20', '21', '22')
-# convert to numeric
-Age <- as.numeric(Age)
-# display the vector
-print(Age)
-# display vector's type
-print(class(Age))
-
-# How many missing values do we have for age? 
-sum(is.na(AELSurveyData$Q50))
-
-# check distribution of covariate
-# Not sure why, but it says age isn't a numeric variable
-hist(AELSurveyData$Q50)
-
-# impute missing values with mean
-mean_covariate <- mean(AELSurveyData$Q50, na.rm = TRUE)
-AELSurveyData$Q50[is.na(AELSurveyData$Q50)] <- mean_covariate
-
-
-
-
-#gender
-AELSurveyData$gender <- AELSurveyData$Q49
-AELSurveyData$gender[AELSurveyData$gender == "Male"] <- 0
-AELSurveyData$gender[AELSurveyData$gender == "Female"] <- 1
-AELSurveyData$gender[AELSurveyData$gender == "Another identification (please specify)"] <- 2
-levels(AELSurveyData$gender)
-summary(AELSurveyData$gender)
-table(AELSurveyData$gender)
-
-# How many missing values do we have for gender? 
-sum(is.na(AELSurveyData$gender))
-# check distribution of covariate
-table(AELSurveyData$gender)
-# determine most common category
-most_common <- names(sort(table(AELSurveyData$gender), decreasing = TRUE))[1]
-# impute missing values with most common category
-AELSurveyData$gender[is.na(AELSurveyData$gender)] <- most_common
-
-#race
-AELSurveyData$race <- AELSurveyData$Q51
-AELSurveyData$race[AELSurveyData$race=="NA's"] <- NA
-AELSurveyData$race[AELSurveyData$race == "Caucasian/White"] <- 0
-AELSurveyData$race[AELSurveyData$race == "African American/Black"] <- 1
-AELSurveyData$race[AELSurveyData$race == "Asian"] <- 2
-AELSurveyData$race[AELSurveyData$race == "Native American/Alaska Native"] <- 3
-AELSurveyData$race[AELSurveyData$race == "Multiple/Mixed"] <- 4
-AELSurveyData$race[AELSurveyData$race == "Other (please specify)"] <- 5
-AELSurveyData$race <- as.factor(AELSurveyData$race)
-levels(AELSurveyData$race)
-summary(AELSurveyData$race)
-
-# How many missing values do we have for race? We'll need to know this for when we stratify later in the code
-sum(is.na(AELSurveyData$race))
-# check distribution of covariate
-table(AELSurveyData$race)
-# determine most common category
-most_common <- names(sort(table(AELSurveyData$race), decreasing = TRUE))[1]
-# impute missing values with most common category
-AELSurveyData$race[is.na(AELSurveyData$race)] <- most_common
-
-
-#ethnicity
-AELSurveyData$ethnicity <- AELSurveyData$Q52
-AELSurveyData$ethnicity[AELSurveyData$ethnicity=="NA's"] <- NA
-AELSurveyData$ethnicity[AELSurveyData$ethnicity == "Yes"] <- 1
-AELSurveyData$ethnicity[AELSurveyData$ethnicity == "No"] <- 0
-AELSurveyData$ethnicity <- as.factor(AELSurveyData$ethnicity)
-levels(AELSurveyData$ethnicity)
-summary(AELSurveyData$ethnicity)
-
-# How many missing values do we have for ethnicity? 
-sum(is.na(AELSurveyData$ethnicity))
-# check distribution of covariate
-table(AELSurveyData$ethnicity)
-# determine most common category
-most_common <- names(sort(table(AELSurveyData$ethnicity), decreasing = TRUE))[1]
-# impute missing values with most common category
-AELSurveyData$ethnicity[is.na(AELSurveyData$ethnicity)] <- most_common
-
-#citizenship
-AELSurveyData$citizenship <- AELSurveyData$Q46
-AELSurveyData$citizenship[AELSurveyData$citizenship=="NA's"] <- NA
-AELSurveyData$citizenship[AELSurveyData$citizenship == "Yes"] <- 1
-AELSurveyData$citizenship[AELSurveyData$citizenship == "No"] <- 0
-AELSurveyData$citizenship <- as.factor(AELSurveyData$citizenship)
-levels(AELSurveyData$citizenship)
-summary(AELSurveyData$citizenship)
-
-# How many missing values do we have for citizenship? 
-sum(is.na(AELSurveyData$citizenship))
-# check distribution of covariate
-table(AELSurveyData$citizenship)
-# determine most common category
-most_common <- names(sort(table(AELSurveyData$citizenship), decreasing = TRUE))[1]
-# impute missing values with most common category
-AELSurveyData$citizenship[is.na(AELSurveyData$citizenship)] <- most_common
-
-#voting eligibility
-which(colnames(AELSurveyData)=="Q8") #tells you which column number
-AELSurveyData$voteeligible <- AELSurveyData$Q8
-AELSurveyData$voteeligible[AELSurveyData$voteeligible=="NA's"] <- NA
-AELSurveyData$voteeligible[AELSurveyData$voteeligible == "Yes"] <- 1
-AELSurveyData$voteeligible[AELSurveyData$voteeligible == "No"] <- 0
-AELSurveyData$voteeligible <- as.factor(AELSurveyData$voteeligible)
-levels(AELSurveyData$voteeligible)
-summary(AELSurveyData$voteeligible)
-
-# I don't think I should impute for this
 
 #discrimination, anxious
 AELSurveyData$discanxious <- AELSurveyData$Q33
@@ -304,6 +286,13 @@ AELSurveyData$yardsign[AELSurveyData$yardsign == "For a candidate for another of
 AELSurveyData$yardsign[AELSurveyData$yardsign == "For a Presidential candidate's campaign,For another political group or cause"] <- 1          
 AELSurveyData$yardsign[AELSurveyData$yardsign == "For a Presidential candidate's campaign,For a candidate for another office,For another political group or cause"] <- 1
 
+AELSurveyData$yardsign <- as.factor(AELSurveyData$yardsign)
+levels(AELSurveyData$yardsign)
+summary(AELSurveyData$yardsign)
+
+str(AELSurveyData$yardsign)
+unique(AELSurveyData$yardsign)
+
 #participation, Displayed a button bumper sticker
 AELSurveyData$buttonbumper <- AELSurveyData$Q12_2
 AELSurveyData$buttonbumper[AELSurveyData$buttonbumper=="NA"] <- 0
@@ -344,10 +333,16 @@ AELSurveyData$money <- as.factor(AELSurveyData$money)
 levels(AELSurveyData$money)
 summary(AELSurveyData$money)
 
-# Test internal reliability for the TSDS
-discrimination.index<- data.frame(AELSurveyData$dishyperv, AELSurveyData$discworry, AELSurveyData$discisolate, AELSurveyData$discemotion, AELSurveyData$discnight, AELSurveyData$discunsafe, AELSurveyData$discavoid, AELSurveyData$discanxious, AELSurveyData$discafraid, AELSurveyData$discfunction, AELSurveyData$discembarrass, AELSurveyData$discannoy)
+#Group all of the discrimination questions so they are one variable, Q33 through Q44 omitting the attention check question (Q36)
+#Do the same with participation
+#Use the code below for a simple linear regression
+#figure out how to get rid of warning messages that pop up when you run the line of code below
+#you can't use a categorical variable as a predictor for a numeric variable
+discrimination.lastelection.glm <- glm(lastelection ~ discrimination, data=AELSurveyData, family=binomial)
+summary(discrimination.lastelection.glm)
 
-library(dplyr)
+#produces an index with all TSDS items
+discrimination.index<- data.frame(AELSurveyData$ID, AELSurveyData$dishyperv, AELSurveyData$discworry, AELSurveyData$discisolate, AELSurveyData$discemotion, AELSurveyData$discnight, AELSurveyData$discunsafe, AELSurveyData$discavoid, AELSurveyData$discanxious, AELSurveyData$discafraid, AELSurveyData$discfunction, AELSurveyData$discembarrass, AELSurveyData$discannoy)
 
 discrimination.index.numeric <- discrimination.index %>% mutate_if(is.factor, as.numeric)
 
@@ -355,13 +350,23 @@ discrimination.index.mean <- discrimination.index.numeric%>%
   mutate(average = rowMeans(across(starts_with("AELSurveyData")) , na.rm=T))
 
 discrimination.index.mean%>%
-  mutate(average = rowMeans(discrimination.index.numeric[,-1]), na.rm=T)
+mutate(average = rowMeans(discrimination.index.numeric[,-1]), na.rm=T)
+
+#produce an index for participation
+participation.index<- data.frame(AELSurveyData$Q12_1, AELSurveyData$Q12_2, AELSurveyData$Q12_3, AELSurveyData$Q12_4, AELSurveyData$Q12_5)
 
 #calculate Cronbach's alpha to ensure items are related
 #disc alpha = 0.922
+#part alpha = 0.652
 install.packages("ltm")
 library(ltm)
 disc.alpha<-cronbach.alpha(discrimination.index, na.rm = TRUE)
+part.alpha<-cronbach.alpha(participation.index, na.rm = TRUE)
+
+#Since the non-voting participation items lack internal consistency, they shouldn't be in an index
+#Instead, make separate plots for each form of participation, one for voting, one for going to a rally, one for displaying a yard sign, etc.
+
+library(dplyr)
 
 #Yard sign
 participation.yardsign<- data.frame(AELSurveyData$ID, AELSurveyData$yardsign)
@@ -387,7 +392,6 @@ participation.money.numeric <- participation.money %>% mutate_if(is.factor, as.n
 total <- merge(discrimination.index.mean, participation.yardsign.numeric,by="AELSurveyData.ID")
 #plot trauma symptoms and displaying a yard sign
 plot(total$average, total$AELSurveyData.yardsign)
-cor(total$average, total$AELSurveyData.yardsign)
 
 #combine the data frames for discrimination trauma symptoms and attending a rally
 total <- merge(discrimination.index.mean, participation.rally.numeric,by="AELSurveyData.ID")
@@ -410,42 +414,58 @@ total <- merge(discrimination.index.mean, participation.money.numeric,by="AELSur
 plot(total$average, total$AELSurveyData.money)
 
 
-```
+# Interaction plot
+library(ggplot2)
+df <- data.frame(
+  treatment = c(0,0,0,1,1,1),
+  covariate = c(1,2,3,1,2,3),
+  outcome = c(6,8,10,12,14,16)
+)
+iplot <- lm(lastelection ~ discrimination*Q51, data = df)
+# Extract the CATE for each level of the covariate
+CATE <- predict(iplot, newdata = data.frame(treatment = c(0, 0, 0, 1, 1, 1),
+                                           covariate = c(1, 2, 3, 1, 2, 3)))
+# Combine the old data frame and the new data frame
+df2 <- cbind(df, CATE)
+# Make an interaction plot, one panel for the treatment group and one for the control group
+ggplot(df2, aes(x = covariate, y = outcome, color = factor(treatment)))+
+  geom_line()+
+  facet_wrap(~treatment)+
+  geom_hline(aes(yintercept = CATE), linetype = "dashed")
 
-Here are our covariates of interest
 
-```{r}
-# For some reason there's an error message saying that 'age' doesn't exist even though I changed the variable name from Q50 to age earlier in the code. In order to produce a summary, I have to put Q50 instead of age
-covs <- c("Q50", "gender", "race", "ethnicity", "voteeligible", "citizenship")
+
+# Covariates of interests (race, ethnicity, age, gender, citizenship, voting eligibility)
+covs <- c("Q49", "Q50", "Q51", "Q52", "Q46", "Q8")
 summary(AELSurveyData[, covs])
-```
 
-Now, we use 'DeclareDesign'to figure out which estimator to use
 
-```{r}
+#Now use 'DeclareDesign'to figure out which estimator to use
 # Treat the data like a population, then re-sample from the population to assess the estimators
 # Stratify based on race. This way, you'll be able to see if there were differences between whites and non-whites in the sample
 pop <- declare_model(AELSurveyData)
 sampling_plan <- declare_sampling(
-  S = strata_rs(strata = race),
+  S = strata_rs(strata = AELSurveyData$race),
   legacy = FALSE
 )
 estimand1 <- declare_inquiry(diffprop = coef(lm(lastelection ~ discrimination))[[2]], label = "diffprop")
 estimand2 <- declare_inquiry(logit = coef(glm(lastelection ~ discrimination, family = binomial), label = "logit")[[2]])
 design <- pop + estimand1 + estimand2 + sampling_plan
-## Looks like by default it samples half the people within each stratum
+
+# Samples half the people within each stratum
 set.seed(150)
 resampdata <- draw_data(design)
 table(resampdata$race)
-mean(resampdata$lastelection)
+#R is saying that the numeric variable I created earlier isn't numeric....Not sure why that's the case
+mean(resampdata$elect_numeric)
 resampdata1 <- draw_data(design)
-mean(resampdata1$lastelection)
-estimator1 <- declare_estimator(lastelection ~ discrimination, .method = lm_robust, se_type = "classical", label = "est1")
-estimator2 <- declare_estimator(lastelection ~ discrimination, .method = lm_robust, clusters = race, se_type = "CR0", label = "est2")
-estimator3 <- declare_estimator(lastelection ~ discrimination, .method = glm, family = binomial, label = "logit")
+mean(resampdata1$elect_numeric)
+model1 <- declare_estimator(elect_numeric ~ discrimination, .method = lm_robust, se_type = "classical", label = "est1")
+model2 <- declare_estimator(elect_numeric ~ discrimination, .method = lm_robust, clusters = race, se_type = "CR0", label = "est2")
+model3 <- declare_estimator(elect_numeric ~ discrimination, .method = glm, family = binomial, label = "logit")
 des_plus_est <- design + estimator1 + estimator2 + estimator3
 str(des_plus_est)
-sims <- simulate_design(des_plus_est, sims = c(1, 1, 1, 10, 1, 1, 1))
+sims <- simulate_design(des_plus_est, sims = c(40, 40, 40, 40, 40, 40, 40))
 head(sims)
 sims %>%
   group_by(inquiry, estimator) %>%
@@ -453,40 +473,24 @@ sims %>%
 diagnosis <- diagnose_design(des_plus_est, bootstrap_sims = 0, sims = c(1, 1, 1, 100, 1, 1, 1))
 diagnosis
 ## diag_sims <- diagnosis$simulations_df
-```
 
-Now we do full matching based on mahalanobis distance
 
-```{r}
 
-#First, calculate the mahalanobis distance
-match_fmla <- reformulate(covs,response="discrimination")
+# Matching on age and gender, mahalanobis distance
+install.packages("MatchIt")
+library(MatchIt)
 
-wrkdat <- fill.NAs(discrimination ~ age + gender + race + ethnicity + voteeligible + citizenship, data = AELSurveyData)
-mhdist <- match_on(discrimination ~ race + ethnicity,
-  within = exactMatch(discrimination ~ AELSurveyData$ID, data = AELSurveyData),
-  data = AELSurveyData,
-  method = "rank_mahalanobis") #But you can't do a rank-based mahalanobis test if the outcome variable is binary, so does this mean I can't match based on mahalanobis distance as a way of testing the first hypothesis (discrimination predicts voting in the last election)?
-summary(mhdist)
+# estimate mahalanobis score
+model_mahal <- glm(discrimination ~ AELSurveyData$Q49 + AELSurveyData$Q50, data = AELSurveyData, family = "binomial")
+AELSurveyData$mscore <- predict(model_mahal, type = "response")
 
-# Now let's do full matching based mahalanobis distance
+# perform matching
+matched_data <- matchit(discrimination ~ mscore, data = AELSurveyData, method = "nearest")
 
-fmatching <- fullmatch(mhdistCal, omit.fraction = omit_frac, min.controls=.5, tol=.0001, solver="LEMON",data = AELSurveyData)
-summary(fmatching,min.controls=0,max.controls=Inf)
-AELSurveyData$fmatching <- factor(fmatching)
-with(AELSurveyData,table(is.na(fmatching), AELSurveyData$ID ,exclude=c()))
-res1 <- lm_robust(lastelection ~ discrimination, fixed_effects = ~fmatching, data = AELSurveyData, subset = !is.na(AELSurveyData$fmatching))
-res1
+# calculate CATE
+CATE <- mean(matched_data$lastelection[matched_data$discrimination == 1] - matched_data$lastelection[matched_data$discrimination == 0])
 
-AELSurveyData$fmatching <- factor(fmatching)
-baltest <- balanceTest(lastelection ~ race + gender + strata(fmatching), data = AELSurveyData)
-zapsmall(baltest$results[, , "fmatching"])
-zapsmall(baltest$overall[, ])
 
-```
-This next part is the sensitivity analysis portion. Matching can be done using mahalanobis distance to calculate how far apart observations are in a multivariate space, but another option is matching based on propensity scores as a way to weight covariates that are predictive of racial discrimination (e.g. race, ethnicity) to give a linear combination of covariates. There is also the option of doing pair matching (i.e. matching respondents who report discrimination to those who do not) or full matching (i.e. matching one treated respondent to one or more non-treated respondents). I intend to do full matching to ensure that fewer observations need to be dropped, but matching based on mahahalanobis distance or propensity scores is more complicated. The data is observational, therefore it could be sensitive to confounding variables. Arguably, the best way to determine how to match respondents lies in sensitivity analysis, which will reveal which matching method is least vulnerable to confounders.
-Here, I am essentially using sensitivity analysis as a comparative robustness check to pick a matching method.
-```{r}
 # And now we do sensitivity analysis for full matching based on mahalanobis distance
 res1_lm <- lm(lastelection ~ discrimination+fmatching, data = AELSurveyData, subset = !is.na(AELSurveyData$fmatching))
 stopifnot(all.equal(coef(res1)[["discrimination"]],coef(res1_lm)[["discrimination"]]))
@@ -496,76 +500,108 @@ summary(sens_analysis_1)
 plot(sens_analysis_1)
 # shows adjusted treatment effect, which includes unobserved confounders
 # sensitivity analysis tells you what the treatment effect is both with and without the unobserved confounders
-```
 
-This next bit uses pair matching for mahalanobis distance
 
-```{r}
-# Match by pairs
-
+# Pair matching
 pmatching <- pairmatch(mhdist, remove.unmatchables = TRUE, data = AELSurveyData)
 summary(pmatching)
 
 AELSurveyData$pmatching <- factor(pmatching)
-baltest <- balanceTest(lastelection ~ race + gender + strata(pmatching), data = AELSurveyData)
+baltest <- balanceTest(lastelection ~ AELSurveyData$Q49 + AELSurveyData$Q50 + strata(pmatching), data = AELSurveyData)
 zapsmall(baltest$results[, , "pmatching"])
 zapsmall(baltest$overall[, ])
 
-```
 
-Now let's do sensitivity analysis for the pair matching
-
-```{r}
+#Sensitivity analysis for pair matching
 res2_lm <- lm(lastelection ~ discrimination+pmatching, data = AELSurveyData, subset = !is.na(AELSurveyData$pmatching))
 stopifnot(all.equal(coef(res2)[["discrimination"]],coef(res2_lm)[["discrimination"]]))
 sens1 <- sensemakr(model = res2_lm, treatment = "discrimination")
-
 sens_analysis_2 <- sensemakr(estimate = coef(res2)[["discrimination"]], se = res2$std.error[["discrimination"]], treatment = "discrimination", dof = res2$df)
-
 summary(sens_analysis_2)
 plot(sens_analysis_2)
 
-```
 
-Given that both hypotheses are uni-directional, I intend to use a one-tailed t-test; I will compare rates of political participation between those who report discrimination and those who do not
-The alpha level will be set at 0.05 and I will reject the null hypothesis if the p-value is greater than 0.05.
-Since the study contains more than one hypothesis and will require more than one test, I plan to adjust for multiple comparisons using Bonferroni’s correction
 
-Here, we can visualize the distribution of non-electoral participation scores with a boxplot and then calculate Bonferroni's correction.
+# This is the balance test for full matching
+set.seed(200)
+AELSurveyData <- AELSurveyData %>%
+  group_by(fmatching) %>%
+  mutate(Z = sample(discrimination)) %>%
+  as.data.frame()
+## This next is necessary because dplyr strips off row.names
+row.names(AELSurveyData) <- AELSurveyData$discrimination
+# Test the null hypothesis and the alternative hypothesis
+xb_randomized <- balanceTest(Z ~ gender + Q50 + citizenship + strata(fmatching), data = AELSurveyData)
+xb_randomized$overall["fmatching",,]
+xb_randomized$results[,,"fmatching"]
 
-```{r}
-boxplot(rally ~ discrimination.index,
-        data = AELSurveyData,
-        main = "Non-Electoral Participation by Racial Trauma",
-        xlab = "Racial Trauma",
-        ylab = "Non-Electoral Participation 1",
-        col = "steelblue",
-        border = "black")
+xb_obs <- balanceTest(discrimination ~ gender + Q50 + citizenship+strata(fmatching), data = AELSurveyData, p.adjust.method="none")
+xb_obs$overall["fmatching",]
+xb_obs$results[,,"fmatching"]
+p.adjust(xb_obs$results[, "p", "fmatching"], method = "holm")
+p.adjust(xb_obs$results[, "p", "fmatching"], method = "bonferroni")
+xb_obs$results[, "p", "fmatching"]
 
-#fit the one-way ANOVA model
-model <- aov(discrimination.index.numeric ~ rally, data = AELSurveyData)
+setmeanDiffs <- AELSurveyData %>%
+  group_by(fmatching) %>%
+  summarise(
+    diffAboveHS = mean(nhAboveHS[discrimination == 1]) - mean(nhAboveHS[discrimination == 0]),
+    nb = n(),
+    pb = mean(discrimination),
+    nbwt = nb / nrow(AELSurveyData),
+    pbwt = pb * (1 - pb) * nbwt
+  )
+setmeanDiffs
+test_stat1 <- with(setmeanDiffs, sum(diffAboveHS * pbwt / sum(pbwt)))
+test_stat2 <- lm_robust(nhAboveHS ~ nhTrt, fixed_effects = ~fmatching, data=AELSurveyData)
+coef(test_stat2)
 
-#view model output
-summary(model)
 
-#perform pairwise t-tests with Bonferroni's correction
-pairwise.t.test(AELSurveyData$rally, discrimination.index.numeric, p.adjust.method="bonferroni")
 
-```
+# This is the balance test for pair matching
+set.seed(200)
+AELSurveyData <- AELSurveyData %>%
+  group_by(pmatching) %>%
+  mutate(Z = sample(discrimination)) %>%
+  as.data.frame()
+row.names(AELSurveyData) <- AELSurveyData$discrimination
+# Test the null hypothesis and the alternative hypothesis
+xb_randomized <- balanceTest(Z ~ gender + Q50 + citizenship + strata(pmatching), data = AELSurveyData)
+xb_randomized$overall["pmatching",,]
+xb_randomized$results[,,"pmatching"]
 
-This is a randomization-based permutation test
+xb_obs <- balanceTest(discrimination ~ gender + Q50 + citizenship+strata(pmatching), data = AELSurveyData, p.adjust.method="none")
+xb_obs$overall["pmatching",]
+xb_obs$results[,,"pmatching"]
+p.adjust(xb_obs$results[, "p", "pmatching"], method = "holm")
+p.adjust(xb_obs$results[, "p", "pmatching"], method = "bonferroni")
+xb_obs$results[, "p", "fmatching"]
 
-```{r}
+setmeanDiffs <- AELSurveyData %>%
+  group_by(pmatching) %>%
+  summarise(
+    diffelect_numeric = mean(elect_numeric[discrimination == 1]) - mean(elect_numeric[discrimination == 0]),
+    nb = n(),
+    pb = mean(discrimination),
+    nbwt = nb / nrow(AELSurveyData),
+    pbwt = pb * (1 - pb) * nbwt
+  )
+setmeanDiffs
+test_stat1 <- with(setmeanDiffs, sum(diffelect_numeric * pbwt / sum(pbwt)))
+test_stat2 <- lm_robust(elect_numeric ~ discrimination, fixed_effects = ~pmatching, data=AELSurveyData)
+coef(test_stat2)
+
+
+# Permutation test
 # Generating data
 set.seed(150)
 d <- as.data.frame(cbind(rnorm(1:20, 500, 50), c(rep(0, 10), rep(1, 10))))
-
 
 #Difference in means
 original <- diff(tapply(lastelection, discrimination, mean))
 mean(lastelection[treatment==1])-mean(lastelection[discrimination==0])
 
-#Permutation test
+#Permutation
 permutation.test <- function(discrimination, lastelection, n){
   distribution=c()
   result=0
@@ -575,13 +611,76 @@ permutation.test <- function(discrimination, lastelection, n){
   result=sum(abs(distribution) >= abs(original))/(n)
   return(list(result, distribution))
 }
-
 test1 <- permutation.test(discrimination, lastelection, 10000)
 hist(test1[[2]], breaks=50, col='grey', main="Permutation Distribution", las=1, xlab='')
 abline(v=original, lwd=3, col="red")
-
 test1[[1]]
-
-
 #Compare to t-test
 t.test(lastelection~treatment)
+
+# Bootstrapping
+library(boot)
+boot_mean <- function(data, i) {
+  mean(data[i])
+}
+boot_results <- boot(data = discrimination.index.numeric, statistic = boot_mean, R = 1000)
+summary(boot_results)
+hist(boot_results$t, main = "Bootstrap Distribution of Mean", xlab = "Mean")
+
+
+# Independent samples t-test
+# Extract a subset of the data where the discrimination variable is "Yes"
+discrimination_yes <- subset(AELSurveyData, discrimination == "Yes")
+# Extract a subset of the data where the discrimination variable is "No"
+discrimination_no <- subset(AELSurveyData, discrimination == "No")
+# Create two data frames
+treatment_group <- discrimination_yes
+control_group <- discrimination_no
+
+# Check normality assumption for treatment group
+shapiro.test(treatment_group$elect_numeric)
+# Check normality assumption for control group
+shapiro.test(control_group$elect_numeric)
+# Check homogeneity of variances
+bartlett.test(elect_numeric ~ group, data = AELSurveyData)
+# Perform t-test for treatment group
+treatment_ttest <- t.test(treatment_group$elect_numeric, control_group$elect_numeric)
+# Perform t-test for control group
+control_ttest <- t.test(control_group$elect_numeric, treatment_group$elect_numeric)
+# Interpret results for treatment group
+treatment_ttest
+cohens_d(treatment_group$elect_numeric, control_group$elect_numeric)
+# Interpret results for control group
+control_ttest
+cohens_d(control_group$elect_numeric, treatment_group$elect_numeric)
+
+
+# This next part is to calculate the false discovery rate
+# Generate some example p-values
+p_values <- c(0.6, 0.8)
+# Use the p.adjust() function with the method = "fdr" argument
+fdr <- p.adjust(p_values, method = "fdr")
+# Print the original p-values and the adjusted p-values
+cbind(p_values, fdr)
+
+
+# Calculate MSE
+# Define the estimator
+estimator <- function(discrimination) mean(AELSurveyData$lastelection)
+mse <- mean((estimator(AELSurveyData$discrimination) - AELSurveyData$lastelection)^2)
+
+
+# Bootstrapping to calculate bias
+library(boot)
+boot_mean <- function(AELSurveyData, i) {
+  mean(AELSurveyData[i])
+}
+boot_results <- boot(AELSurveyData = discrimination.index.numeric, statistic = boot_mean, R = 1000)
+summary(boot_results)
+hist(boot_results$t, main = "Bootstrap Distribution of Mean", xlab = "Mean")
+
+
+# create OLS model
+OLS <- lm(lastelection ~ citizenship + ethnicity, data = AELSurveyData)
+# print summary of OLS model
+summary(OLS)
