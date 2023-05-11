@@ -1,5 +1,4 @@
 # PS531PreAnalysisPlan
-```{r setup, include=FALSE}
 # install.packages("knitr")
 # install.packages("skimr")
 library(knitr)
